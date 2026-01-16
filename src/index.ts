@@ -20,6 +20,8 @@ import logsRoutes from "./routes/logsRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
 import siteUsersRoutes from "./routes/siteUsersRoutes.js";
 import complaintCategoryRoutes from "./routes/complaintCategoryRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import { startNotificationScheduler } from "./utils/scheduler.js";
 
 dotenv.config();
 
@@ -31,7 +33,7 @@ app.use(express.json());
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,
-    max: 1000,
+    max: 5000,
     message: {
       success: false,
       error: "Too many requests, please try again later.",
@@ -54,6 +56,7 @@ app.use("/api/logs", logsRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/site-users", siteUsersRoutes);
 app.use("/api/complaint-categories", complaintCategoryRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/ping", (req, res) => {
   res.json({
@@ -149,16 +152,21 @@ app.use((err: any, req: any, res: any, next: any) => {
   });
 });
 
-const port = process.env.PORT || 3420;
+const port = Number(process.env.PORT) || 3420;
+const host = "0.0.0.0"; // Listen on all interfaces for Android emulator access
 
-app.listen(port, () => {
+app.listen(port, host, () => {
   console.log(`
 ╔════════════════════════════════════════════════════════════╗
 ║           SmartOps HVAC Operations Management API          ║
 ╠════════════════════════════════════════════════════════════╣
 ║  Server running on port ${port}                               ║
+║  Listening on: ${host}:${port}                               ║
 ║  Health check: http://localhost:${port}/health                ║
-║  API docs: http://localhost:${port}/api                       ║
+║  Android: http://10.0.2.2:${port}                            ║
 ╚════════════════════════════════════════════════════════════╝
     `);
+
+  // Start notification scheduler
+  startNotificationScheduler();
 });
